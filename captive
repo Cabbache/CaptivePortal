@@ -1,0 +1,50 @@
+#!/bin/bash
+set -e
+
+#make any required changes
+IFACE='wlan0'
+SSID='wifi'
+DOMAIN='anyrandom.domain'
+PASSWORD='secret00'
+CAPTIVE_PORT='8080'
+CONTAINER_NAME='captive'
+IMAGE_NAME='captive_portal_static'
+IPNUM='77'
+
+[[ -z "$PASSWORD" ]] || PASSWORD="-p $PASSWORD"
+
+tee nginx.conf <<EOF > /dev/null
+server {
+	listen	80;
+	listen	[::]:80;
+
+	server_name $DOMAIN;
+
+	root /usr/share/nginx/html;
+	index index.html index.htm index.nginx-debian.html;
+}
+
+#inject location header if Host header is incorrect
+server {
+	listen	80 default_server;
+	listen	[::]:80 default_server;
+
+	return 301 http://$DOMAIN;
+}
+EOF
+
+#setup web server for captive portal
+docker build -t "$IMAGE_NAME" .
+docker run --name "$CONTAINER_NAME" -it --rm -d -p "$CAPTIVE_PORT:80" -v $(pwd)/site:/usr/share/nginx/html "$IMAGE_NAME"
+
+#make rule to redirect all http requests to captive portal page
+iptables -i lnxr0 -t nat -A PREROUTING -p tcp --dport 80 -j DNAT --to-destination "192.168.$IPNUM.1:$CAPTIVE_PORT"
+
+#start the AP
+./lnxrouter --ap "$IFACE" "$SSID" $PASSWORD -g "$IPNUM" --hostname "$DOMAIN"
+
+#remove rule
+iptables -i lnxr0 -t nat -D PREROUTING -p tcp --dport 80 -j DNAT --to-destination "192.168.$IPNUM.1:$CAPTIVE_PORT"
+
+#stop container
+docker stop "$CONTAINER_NAME"
