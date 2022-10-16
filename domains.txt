@@ -1,0 +1,2 @@
+74.125.68.94 connectivitycheck.gstatic.com 
+72.217.168.206 clients3.google.com
