@@ -1,19 +1,12 @@
 #!/bin/bash
 set -e
 
-function copy_arp() {
-	while sleep 1
-	do
-		cp /proc/net/arp arp
-	done
-}
-
 #make any required changes
 IFACE='wlan0'
 SSID='wifi'
 DOMAIN='anyrandom.domain'
 PASSWORD=''
-CAPTIVE_PORT='8081'
+CAPTIVE_PORT='30123'
 CONTAINER_NAME='captive_site'
 IMAGE_NAME='captive_portal'
 IPNUM='66'
@@ -53,15 +46,15 @@ http {
 
     #inject location header
 		server {
-        listen [::]:8080 default_server;
-        listen 8080 default_server;
+        listen [::]:$CAPTIVE_PORT default_server;
+        listen $CAPTIVE_PORT default_server;
 
         return 301 http://$DOMAIN;
 		}
 
     server {
-        listen [::]:8080;
-        listen 8080;
+        listen [::]:$CAPTIVE_PORT;
+        listen $CAPTIVE_PORT;
         server_name $DOMAIN;
 
         sendfile off;
@@ -131,12 +124,9 @@ http {
 }
 EOF
 
-cp /proc/net/arp arp
-copy_arp &
-
 #setup web server for captive portal
 docker build -t "$IMAGE_NAME" .
-docker run --name "$CONTAINER_NAME" -it --rm -d -p "$CAPTIVE_PORT:8080" -v "$(pwd)/site:/var/www/html" -v "$(pwd)/arp:/arp" "$IMAGE_NAME"
+docker run --name "$CONTAINER_NAME" -it --rm -d --network host -v "$(pwd)/site:/var/www/html" "$IMAGE_NAME"
 
 #make rule to redirect all http requests to captive portal page
 iptables -i lnxr0 -t nat -A PREROUTING -p tcp --dport 80 -j DNAT --to-destination "192.168.$IPNUM.1:$CAPTIVE_PORT"
