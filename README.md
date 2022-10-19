@@ -1,5 +1,5 @@
 # CaptivePortal
-A wrapper for [linux-router](https://github.com/garywill/linux-router/) to make a captive portal.
+A wrapper for [linux-router](https://github.com/garywill/linux-router) to make a captive portal.
 
 ## Features ##
 
@@ -9,6 +9,7 @@ A wrapper for [linux-router](https://github.com/garywill/linux-router/) to make 
 
 ## How to run ##
 * Make the necessary changes in the global variables of `captive`
+* run `./update_domains.sh` while you have internet access
 * Put your captive portal web server PHP code in `site/`
 * `sudo ./captive`
 
