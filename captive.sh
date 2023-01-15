@@ -132,7 +132,7 @@ docker run --name "$CONTAINER_NAME" -it --rm -d --network host -v "$(pwd)/site:/
 iptables -i lnxr0 -t nat -A PREROUTING -p tcp --dport 80 -j DNAT --to-destination "192.168.$IPNUM.1:$CAPTIVE_PORT"
 
 #start the AP
-./linux-router/lnxrouter --ap "$IFACE" "$SSID" $PASSWORD -g "$IPNUM" --hostname "$DOMAIN" --random-mac --virt-name lnxr -e "$(pwd)/domains.txt"
+./linux-router/lnxrouter --ap "$IFACE" "$SSID" $PASSWORD -g "$IPNUM" --hostname "$DOMAIN" --random-mac --virt-name lnxr0 -e "$(pwd)/domains.txt"
 
 #remove rule
 iptables -i lnxr0 -t nat -D PREROUTING -p tcp --dport 80 -j DNAT --to-destination "192.168.$IPNUM.1:$CAPTIVE_PORT"
